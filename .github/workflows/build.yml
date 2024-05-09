@@ -30,7 +30,7 @@ jobs:
             PKG_HASH="$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -sL https://codeload.github.com/${REPO}/tar.gz/v${PKG_VERSION} | sha256sum | cut -d ' ' -f 1)"
             sed -i "s/^PKG_VERSION.*/PKG_VERSION:=${PKG_VERSION}/" netbird/Makefile
             sed -i "s/^PKG_HASH.*/PKG_HASH:=${PKG_HASH}/" netbird/Makefile
-            echo "package_version=$PKG_VERSION" >> $GITHUB_OUTPUT
+            echo "package_version=$PKG_VERSION"" >>$GITHUB_ENV
           fi
           
       - name: Set update
@@ -40,7 +40,7 @@ jobs:
           status=$(git status -s | grep -E 'netbird/Makefile' | awk '{printf " %s", $2}')
           if [ -n "${status}" ]; then
             git add netbird/Makefile
-            git commit -m "update to ${{ steps.Check.output.package_version }} $(date +%Y-%m-%d" "%H:%M:%S)"
+            git commit -m "update to $package_version $(date +%Y-%m-%d" "%H:%M:%S)"
             git push -f
             echo "update=true" >>$GITHUB_ENV
           else
