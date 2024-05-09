@@ -103,6 +103,7 @@ jobs:
 
       - name: Build Package
         run: |
+          git pull
           cd openwrt-sdk
           cp -rf ../netbird ./package/
           sed -i "1i\\src-link netbird $(pwd)/package" feeds.conf.default
