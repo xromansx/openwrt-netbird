@@ -30,7 +30,7 @@ jobs:
             PKG_HASH="$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -sL https://codeload.github.com/${REPO}/tar.gz/v${PKG_VERSION} | sha256sum | cut -d ' ' -f 1)"
             sed -i "s/^PKG_VERSION.*/PKG_VERSION:=${PKG_VERSION}/" netbird/Makefile
             sed -i "s/^PKG_HASH.*/PKG_HASH:=${PKG_HASH}/" netbird/Makefile
-            echo "package_version=$PKG_VERSION"" >>$GITHUB_ENV
+            echo "package_version=$PKG_VERSION" >>$GITHUB_ENV
           fi
           
       - name: Set update
