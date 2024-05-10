@@ -27,11 +27,12 @@ jobs:
           localetag=$(grep "^PKG_VERSION" netbird/Makefile | sed "s/.*=\(.*\)/\1/")
           if [ "${latesttag/v/}" != "${localetag}" ]; then
             PKG_VERSION=${latesttag/v/}
-            PKG_HASH="$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -sL https://codeload.github.com/${REPO}/tar.gz/${PKG_VERSION} | sha256sum | cut -d ' ' -f 1)"
-            sed -i "s/^PKG_VERSION.*/PKG_VERSION=${PKG_VERSION}/" netbird/Makefile
-            sed -i "s/^PKG_HASH.*/PKG_HASH=${PKG_HASH}/" netbird/Makefile
+            PKG_HASH="$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -sL https://codeload.github.com/${REPO}/tar.gz/v${PKG_VERSION} | sha256sum | cut -d ' ' -f 1)"
+            sed -i "s/^PKG_VERSION.*/PKG_VERSION:=${PKG_VERSION}/" netbird/Makefile
+            sed -i "s/^PKG_HASH.*/PKG_HASH:=${PKG_HASH}/" netbird/Makefile
+            echo "package_version=$PKG_VERSION" >>$GITHUB_ENV
           fi
-
+          
       - name: Set update
         id: set-update
         run: |
@@ -39,7 +40,7 @@ jobs:
           status=$(git status -s | grep -E 'netbird/Makefile' | awk '{printf " %s", $2}')
           if [ -n "${status}" ]; then
             git add netbird/Makefile
-            git commit -m "update $(date +%Y-%m-%d" "%H:%M:%S)"
+            git commit -m "update to $package_version $(date +%Y-%m-%d" "%H:%M:%S)"
             git push -f
             echo "update=true" >>$GITHUB_ENV
           else
@@ -102,14 +103,16 @@ jobs:
 
       - name: Build Package
         run: |
+          git pull
           cd openwrt-sdk
+          cp -rf ../netbird ./package/
+          sed -i "1i\\src-link netbird $(pwd)/package" feeds.conf.default
+          
           ./scripts/feeds update -a
           ./scripts/feeds install -a
+          
           make defconfig
-
-          cp -rf ../netbird ./package/
           make package/netbird/compile V=s CONFIG_NETBIRD_COMPRESS_UPX=y
-
           mkdir -p packed && find bin/ -type f -name '*netbird*' -exec mv -t packed {} +
           echo "VERSION=v$(grep "^PKG_VERSION" package/netbird/Makefile | sed "s/.*=\(.*\)/\1/")" >>$GITHUB_ENV
 
@@ -129,4 +132,3 @@ jobs:
           tag_name: ${{ env.VERSION }}
           files: |
             openwrt-sdk/packed/*.ipk
-
